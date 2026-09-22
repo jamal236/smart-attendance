@@ -660,6 +660,9 @@
     // Waktu QR terakhir diproses
     let lastScannedTime = 0;
 
+    // QR yang sedang dalam proses request
+    const processingQRCodes = new Set();
+
     // Berapa lama QR yang sama diabaikan
     const SAME_QR_COOLDOWN = 1500;
 
@@ -670,95 +673,120 @@
     ============================================================
     */
 
-    function prosesAbsensi(decodedText, messageElement) {
+   function prosesAbsensi(decodedText, messageElement) {
 
-        const now = Date.now();
+    const now = Date.now();
 
-        /*
-        Jangan proses QR yang sama berulang-ulang
-        dalam waktu 3 detik.
-        */
+    /*
+    Jangan proses QR yang sedang dalam proses.
+    Ini mencegah satu QR mengirim banyak request
+    sebelum request sebelumnya selesai.
+    */
 
-        if (
-            decodedText === lastScannedCode &&
-            now - lastScannedTime < SAME_QR_COOLDOWN
-        ) {
-            return;
-        }
+    if (processingQRCodes.has(decodedText)) {
+        return;
+    }
 
-        lastScannedCode = decodedText;
-        lastScannedTime = now;
+    /*
+    Jangan proses QR yang sama berulang-ulang
+    dalam waktu cooldown.
+    */
+
+    if (
+        decodedText === lastScannedCode &&
+        now - lastScannedTime < SAME_QR_COOLDOWN
+    ) {
+        return;
+    }
+
+    /*
+    Tandai QR sedang diproses.
+    */
+
+    processingQRCodes.add(decodedText);
+
+    lastScannedCode = decodedText;
+    lastScannedTime = now;
 
 
-        messageElement.innerHTML =
-            'QR terbaca. Memproses absensi...';
+    messageElement.innerHTML =
+        'QR terbaca. Memproses absensi...';
 
 
-        const formData = new FormData();
+    const formData = new FormData();
 
-        formData.append(
-            'qr_code',
-            decodedText
+    formData.append(
+        'qr_code',
+        decodedText
+    );
+
+
+    fetch("/attendance/scan", {
+
+        method: "POST",
+
+        headers: {
+            "X-CSRF-TOKEN": "{{ csrf_token() }}",
+            "Accept": "application/json"
+        },
+
+        body: formData
+
+    })
+
+    .then(function (response) {
+
+        return response.json();
+
+    })
+
+    .then(function (result) {
+
+        console.log(
+            'Hasil absensi:',
+            result
         );
 
 
-        fetch("/attendance/scan", {
-
-            method: "POST",
-
-            headers: {
-                "X-CSRF-TOKEN": "{{ csrf_token() }}",
-                "Accept": "application/json"
-            },
-
-            body: formData
-
-        })
-
-        .then(function (response) {
-
-            return response.json();
-
-        })
-
-        .then(function (result) {
-
-            console.log(
-                'Hasil absensi:',
-                result
-            );
-
-
-            if (result.success) {
-
-                messageElement.innerHTML =
-                    '' +
-                    result.data.nama +
-                    ' berhasil melakukan absensi.';
-
-            } else {
-
-                messageElement.innerHTML =
-                    '' +
-                    result.message;
-
-            }
-
-        })
-
-        .catch(function (error) {
-
-            console.error(
-                'Attendance error:',
-                error
-            );
+        if (result.success) {
 
             messageElement.innerHTML =
-                '❌ Gagal memproses absensi.';
+                result.data.nama +
+                ' berhasil melakukan absensi.';
 
-        });
+        } else {
 
-    }
+            messageElement.innerHTML =
+                result.message;
+
+        }
+
+    })
+
+    .catch(function (error) {
+
+        console.error(
+            'Attendance error:',
+            error
+        );
+
+        messageElement.innerHTML =
+            '❌ Gagal memproses absensi.';
+
+    })
+
+    .finally(function () {
+
+        /*
+        Request sudah selesai.
+        QR boleh diproses kembali setelah cooldown.
+        */
+
+        processingQRCodes.delete(decodedText);
+
+    });
+
+}
 
 
     /*
