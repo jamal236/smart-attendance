@@ -2,6 +2,13 @@ FROM richarvey/nginx-php-fpm:3.1.6
 
 COPY . .
 
+RUN mkdir -p storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/logs \
+    bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache
+
 RUN composer install --no-dev --no-interaction --no-progress --optimize-autoloader
 
 # Image config
