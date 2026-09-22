@@ -851,9 +851,8 @@
 {{-- BUAT SESI --}}
 
 @php
-    $googleSheetRepository = app(\App\Repositories\GoogleSheetRepository::class);
-    $activeSession = collect($googleSheetRepository->getMeetings())
-        ->firstWhere('status', 'AKTIF');
+    $sessionRepository = app(\App\Repositories\SessionRepository::class);
+    $activeSession = $sessionRepository->getActiveSession();
 @endphp
 
 <a
