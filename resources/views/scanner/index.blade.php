@@ -175,7 +175,7 @@
 
 
 <form
-    action="{{ route('sessions.end') }}"
+    action="/akhiri-sesi"
     method="POST"
     onsubmit="return confirm('Yakin ingin mengakhiri sesi ini?');"
 >
