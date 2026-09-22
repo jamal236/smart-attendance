@@ -702,7 +702,7 @@
         );
 
 
-        fetch("{{ route('attendance.scan') }}", {
+        fetch("/attendance/scan", {
 
             method: "POST",
 
