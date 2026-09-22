@@ -1,8 +1,13 @@
-[phases.setup]
+[phases.build]
 cmds = [
     "mkdir -p storage/framework/cache",
     "mkdir -p storage/framework/sessions",
     "mkdir -p storage/framework/views",
     "mkdir -p storage/logs",
-    "mkdir -p bootstrap/cache"
+    "mkdir -p bootstrap/cache",
+    "composer install --no-dev --no-interaction --no-progress --optimize-autoloader",
+    "php artisan package:discover --ansi"
 ]
+
+[start]
+cmd = "/start.sh"
