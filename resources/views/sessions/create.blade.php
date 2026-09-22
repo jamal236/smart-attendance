@@ -104,7 +104,7 @@
         </div>
 
 
-        <form action="{{ route('sessions.store') }}" method="POST">
+        <form action="/buat-sesi" method="POST">
 
             @csrf
 
